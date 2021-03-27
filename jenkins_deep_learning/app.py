@@ -42,9 +42,9 @@ def Form():
                 params['Time'] = request.form['Time']
                 
 
-                output = m.predict([[ int(params['Age']) , int(params['Anaemia']) , int(params['Creatinine_Phosphokinase']) , int(params['Diabetes']) , int(params['Ejection_Fraction']) ,int(params['High_Blood_Pressure']) , int(params['Platelets']),int(params['Serum_Creatinine']),int(params['serum_sodium']),int(params['Gender']) ,int(params['Smoking']),int(params['Time'])]])
+                output = m.predict([[ int(params['Age']) , int(params['Anaemia']) , int(params['Creatinine_Phosphokinase']) , int(params['Diabetes']) , int(params['Ejection_Fraction']) ,int(params['High_Blood_Pressure']) , int(params['Platelets']),float(params['Serum_Creatinine']),int(params['serum_sodium']),int(params['Gender']) ,int(params['Smoking']),int(params['Time'])]])
                 print(output)
-                print(int(params['Age']) , int(params['Anaemia']) , int(params['Creatinine_Phosphokinase']) , int(params['Diabetes']) , int(params['Ejection_Fraction']) ,int(params['High_Blood_Pressure']) , int(params['Platelets']),int(params['Serum_Creatinine']),int(params['serum_sodium']),int(params['Gender']),int(params['Smoking']),int(params['Time']))
+                print(int(params['Age']) , int(params['Anaemia']) , int(params['Creatinine_Phosphokinase']) , int(params['Diabetes']) , int(params['Ejection_Fraction']) ,int(params['High_Blood_Pressure']) , int(params['Platelets']),float(params['Serum_Creatinine']),int(params['serum_sodium']),int(params['Gender']),int(params['Smoking']),int(params['Time']))
                 print(output[0][0])
                 if (str(output[0][0])) <= '0.16':
                         params['output'] =  'Death Possibility is lower'
