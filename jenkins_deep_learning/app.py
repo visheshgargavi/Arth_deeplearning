@@ -65,4 +65,5 @@ def output():
         print(str(output[0][0]))
         return (str(output[0][0]))
 
-app.run(host="0.0.0.0" , port="81")
+if__name__ =='__main__':app.run()
+        app.run(host="0.0.0.0" , port="81")
