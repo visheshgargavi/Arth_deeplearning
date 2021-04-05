@@ -1,0 +1,20 @@
+- hosts: localhost
+  vars_files:
+  - aws_cred.yml
+
+  tasks:
+  - ec2:
+      region: ap-south-1
+      key_name: "aayushikey"
+      instance_type: t2.medium
+      count: 1
+      image: ami-0a17ea81509915cd9
+      count_tag:
+             Name: master
+      instance_tags:
+            Name: master
+      vpc_subnet_id: subnet-05b05c90554953811
+      group_id: sg-02eb0ecb2af5b0639
+      state: present
+      aws_access_key: "{{ access_key }}"
+      aws_secret_key: "{{ secret_key }}"

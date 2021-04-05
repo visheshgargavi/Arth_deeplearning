@@ -1,0 +1,107 @@
+---
+# tasks file for master_kube
+
+  - name: Remove docker if installed from CentOS repo
+    yum:
+       name:
+        - docker-client
+        - docker-client-latest
+        - docker-common
+        - docker-latest
+        - docker-latest-logrotate
+        - docker-logrotate
+        - docker-engine
+       state: removed
+
+  - name: installing docker software
+    package:
+      name: "docker"
+      state: present
+
+  - name: starting docker services
+    service:
+      name: "docker"
+      state: started
+      enabled: yes
+
+  - name: Adding yum repository for Kubernetes
+    yum_repository:
+       baseurl: https://packages.cloud.google.com/yum/repos/kubernetes-el7-x86_64
+       name: KUBERNETES
+       state: present
+       description: Kubernetes
+       gpgkey: https://packages.cloud.google.com/yum/doc/yum-key.gpg https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
+       enabled: yes
+  - name: Install Kubernetes binaries
+    package:
+       name: "{{ packages }}"
+       state: present
+       update_cache: yes
+    vars:
+       packages:
+        - kubelet
+        - kubeadm
+        - kubectl
+
+  - name: copy daemon file
+    copy:
+       src: daemon.json
+       dest: /etc/docker/daemon.json
+
+  - name: Remove swapfile from /etc/fstab
+    mount:
+       name: "{{ item }}"
+       fstype: swap
+       state: absent
+    with_items:
+       - swap
+       - none
+
+
+  - name: Restart Docker service
+    service:
+       name: docker
+       state: restarted
+       enabled: yes
+    become: yes
+
+  - name: Install iproute-tc
+    package:
+       name: iproute-tc
+       state: present
+       update_cache: yes
+
+  - name: start kubelet
+    service:
+       name: kubelet
+       daemon_reload: yes
+       state: started
+       enabled: yes
+
+
+  - name: Initialize the Kubernetes cluster using kubeadm
+    shell: "kubeadm init --pod-network-cidr=10.240.0.0/16 --ignore-preflight-errors=NumCPU --ignore-preflight-errors=Mem"
+    ignore_errors: yes
+
+  - name: Setup kubeconfig for home user
+    shell: "{{ item }}"
+    with_items:
+    - "mkdir -p $HOME/.kube"
+    - "cp -i /etc/kubernetes/admin.conf $HOME/.kube/config"
+    - "chown $(id -u):$(id -g) $HOME/.kube/config"
+
+  - name: Install Flannel pod network
+    shell: kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
+
+  - name: Generate join command
+    command: kubeadm token create --print-join-command
+    register: join_command
+
+  - name: print token
+    debug:
+      var: join_command
+
+  - name: Copy join command to local file
+    local_action: copy content="{{ join_command.stdout_lines[0] }}" dest="./join-command"
+
+

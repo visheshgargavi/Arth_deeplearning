@@ -1,0 +1,7 @@
+- hosts: aws1
+  become_method: sudo
+  become_user: root
+  become: true
+  roles:
+          - role: slave_kube
+

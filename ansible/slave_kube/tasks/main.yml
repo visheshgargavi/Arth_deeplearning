@@ -1,0 +1,95 @@
+---
+# tasks file for slave_kube
+
+
+  - name: Remove docker if installed from CentOS repo
+    yum:
+       name:
+        - docker-client
+        - docker-client-latest
+        - docker-common
+        - docker-latest
+        - docker-latest-logrotate
+        - docker-logrotate
+        - docker-engine
+       state: removed
+
+  - name: installing docker software
+    package:
+      name: "docker"
+      state: present
+
+  - name: starting docker services
+    service:
+      name: "docker"
+      state: started
+      enabled: yes
+
+  - name: Adding yum repository for Kubernetes
+    yum_repository:
+       baseurl: https://packages.cloud.google.com/yum/repos/kubernetes-el7-x86_64
+       name: KUBERNETES
+       state: present
+       description: Kubernetes
+       gpgkey: https://packages.cloud.google.com/yum/doc/yum-key.gpg https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
+       enabled: yes
+  - name: Install Kubernetes binaries
+    package:
+       name: "{{ packages }}"
+       state: present
+       update_cache: yes
+    vars:
+       packages:
+        - kubelet
+        - kubeadm
+        - kubectl
+
+  - name: copy daemon file
+    copy:
+       src: daemon.json
+       dest: /etc/docker/daemon.json
+
+  - name: Remove swapfile from /etc/fstab
+    mount:
+       name: "{{ item }}"
+       fstype: swap
+       state: absent
+    with_items:
+       - swap
+       - none
+
+
+  - name: Restart Docker service
+    service:
+       name: docker
+       state: restarted
+       enabled: yes
+    become: yes
+
+  - name: Install iproute-tc
+    package:
+       name: iproute-tc
+       state: present
+       update_cache: yes
+
+  - name: start kubelet
+    service:
+       name: kubelet
+       daemon_reload: yes
+       state: started
+       enabled: yes
+
+  - name: appending systcl file
+    shell: "cat <<EOF | sudo tee /etc/sysctl.d/k8s.conf \n net.bridge.bridge-nf-call-ip6tables = 1 \n net.bridge.bridge-nf-call-iptables = 1"
+
+  - name: appending sysctl file
+    shell: "sudo sysctl --system"
+
+  - name: Copy the join command to server location
+    copy: 
+      src: /root/roles/join-command 
+      dest: /tmp/join-command.sh 
+      mode: +x 
+
+  - name: join command
+    shell: "sh /tmp/join-command.sh"
